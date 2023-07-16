@@ -47,6 +47,23 @@ const PostWidget = ({
     dispatch(setPost({ post: updatedPost }));
   };
 
+  const getComments = async () => {
+    if (isComments === false) {
+      setIsComments(!isComments);
+      const response = await fetch(`http://localhost:3001/posts/${postId}/comments`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        }
+      });
+      const updatedPost = await response.json();
+      dispatch(setPost({ post: updatedPost }));
+    } else {
+      setIsComments(!isComments);
+    }
+  }
+
   return (
     <WidgetWrapper m="2rem 0">
       <Friend
@@ -81,7 +98,7 @@ const PostWidget = ({
           </FlexBetween>
 
           <FlexBetween gap="0.3rem">
-            <IconButton onClick={() => setIsComments(!isComments)}>
+            <IconButton onClick={() => getComments()}>
               <ChatBubbleOutlineOutlined />
             </IconButton>
             <Typography>{comments.length}</Typography>
@@ -92,13 +109,14 @@ const PostWidget = ({
           <ShareOutlined />
         </IconButton>
       </FlexBetween>
+
       {isComments && (
         <Box mt="0.5rem">
           {comments.map((comment, i) => (
-            <Box key={`${name}-${i}`}>
+            <Box key={`${i}`}>
               <Divider />
               <Typography sx={{ color: main, m: "0.5rem 0", pl: "1rem" }}>
-                {comment}
+                {comment.comment}
               </Typography>
             </Box>
           ))}
