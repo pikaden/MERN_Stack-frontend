@@ -11,6 +11,8 @@ import WidgetWrapper from "components/WidgetWrapper";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setPost } from "state";
+import { TextField, Stack } from "@mui/material";
+import SendIcon from '@mui/icons-material/Send'; 
 
 const PostWidget = ({
   postId,
@@ -29,6 +31,8 @@ const PostWidget = ({
   const loggedInUserId = useSelector((state) => state.user._id);
   const isLiked = Boolean(likes[loggedInUserId]);
   const likeCount = Object.keys(likes).length;
+  const [showCommentBox, setShowCommentBox] = useState(false);
+  const [newComment, setNewComment] = useState("");
 
   const { palette } = useTheme();
   const main = palette.neutral.main;
@@ -48,22 +52,43 @@ const PostWidget = ({
   };
 
   const getComments = async () => {
-    if (isComments === false) {
-      setIsComments(!isComments);
-      const response = await fetch(`http://localhost:3001/posts/${postId}/comments`, {
+    const response = await fetch(
+      `http://localhost:3001/posts/${postId}/comments`,
+      {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
-        }
-      });
-      const updatedPost = await response.json();
-      dispatch(setPost({ post: updatedPost }));
-    } else {
-      setIsComments(!isComments);
-    }
-  }
+        },
+      }
+    );
+    const updatedPost = await response.json();
+    dispatch(setPost({ post: updatedPost }));
+  };
+  const handleCommentClick = () => {
+    setIsComments(!isComments);
+    setShowCommentBox(!showCommentBox);
+    getComments();
+  };
 
+  const handleCommentChange = (event) => {
+    setNewComment(event.target.value);
+  };
+  const handleCommentSubmit = async () => {
+    await fetch(
+      `http://localhost:3001/posts/${postId}/comments`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ comment: newComment }),
+      }
+    );
+    getComments();
+    setNewComment("");
+  };
   return (
     <WidgetWrapper m="2rem 0">
       <Friend
@@ -98,7 +123,7 @@ const PostWidget = ({
           </FlexBetween>
 
           <FlexBetween gap="0.3rem">
-            <IconButton onClick={() => getComments()}>
+            <IconButton onClick={handleCommentClick}>
               <ChatBubbleOutlineOutlined />
             </IconButton>
             <Typography>{comments.length}</Typography>
@@ -122,6 +147,24 @@ const PostWidget = ({
           ))}
           <Divider />
         </Box>
+      )}
+      {showCommentBox && (
+        <div style={
+          {marginTop: "1rem"}
+        }>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <TextField
+              value={newComment}
+              onChange={handleCommentChange}
+              fullWidth
+              label="Add a comment"
+              variant="outlined"
+            />
+            <IconButton onClick={handleCommentSubmit} color="primary">
+              <SendIcon />
+            </IconButton>
+          </Stack>
+        </div>
       )}
     </WidgetWrapper>
   );
